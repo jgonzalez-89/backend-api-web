@@ -83,7 +83,7 @@ def register():
     db.session.add(user)
     db.session.commit()
 
-    return f"Welcome! {email}"
+    return f"Welcome! {email}", 200
 
 
 @app.route("/login", methods=["POST"])

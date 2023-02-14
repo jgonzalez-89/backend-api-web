@@ -13,7 +13,8 @@ from flask_bcrypt import Bcrypt
 
 # from models import Person
 
-ENV = os.getenv("FLASK_ENV")
+
+ENV = os.getenv("FLASK_DEBUG")
 static_file_dir = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../public/"
 )
@@ -107,7 +108,7 @@ def login():
 
 @app.route("/")
 def sitemap():
-    if ENV == "development":
+    if ENV == "1":
         return generate_sitemap(app)
     return send_from_directory(static_file_dir, "index.html")
 

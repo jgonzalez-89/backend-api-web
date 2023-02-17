@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, User, Product
+from api.models import db, User, Product, ShoppingProduct
 from api.utils import generate_sitemap, APIException
+from sqlalchemy.exc import IntegrityError
 
 
 api = Blueprint("api", __name__)
@@ -9,19 +10,12 @@ api = Blueprint("api", __name__)
 def serialize_user(user):
     return {
         "id": user.id,
-        # 'gender': user.gender,
         "name": user.name,
         "surnames": user.surnames,
-        # 'account_prefix': user.account_prefix,
-        # 'account_number': user.account_number,
-        # 'paypal': user.paypal,
         "email": user.email,
         "is_admin": user.is_admin,
-        # 'username': user.username,
         "password": user.password,
         "location": {
-            # 'street_number': user.location_street_number,
-            # 'street_name': user.location_street_name,
             "city": user.location_city,
             "state": user.location_state,
             "country": user.location_country,
@@ -30,11 +24,7 @@ def serialize_user(user):
         "dob": {"date": user.dob_date, "age": user.dob_age},
         "registered_date": user.registered_date,
         "phone": user.phone,
-        "pictures": {
-            "large": user.picture_large,
-            "medium": user.picture_medium,
-            "thumbnail": user.picture_thumbnail,
-        },
+        "pictures": user.picture_large,
     }
 
 
@@ -56,6 +46,9 @@ def serialize_user_with_products(user):
     return {
         **serialize_user(user),
         "products": [serialize_product(product) for product in user.products],
+        "shopping_products": [
+            serialize_product(product.product) for product in user.shopping_products
+        ],
     }
 
 
@@ -81,19 +74,12 @@ def get_user_by_id(id):
 def create_user():
     data = request.get_json()
     user = User(
-        # gender=data.get('gender'),
         name=data.get("name"),
         surnames=data.get("surnames"),
-        # account_prefix=data.get('account_prefix'),
-        # account_number=data.get('account_number'),
-        # paypal=data.get('paypal'),
         email=data.get("email"),
         is_admin=data.get("is_admin", False),
-        # username=data.get('username'),
         password=data.get("password"),
         hash=data.get("hash"),
-        # location_street_number=data.get('location_street_number'),
-        # location_street_name=data.get('location_street_name'),
         location_city=data.get("location_city"),
         location_state=data.get("location_state"),
         location_country=data.get("location_country"),
@@ -103,10 +89,7 @@ def create_user():
         registered_date=data.get("registered_date"),
         phone=data.get("phone"),
         picture_large=data.get("picture_large"),
-        picture_medium=data.get("picture_medium"),
-        picture_thumbnail=data.get("picture_thumbnail"),
     )
-    # user.set_password(data.get('password'))  # Hash the password
     db.session.add(user)
     db.session.commit()
     return jsonify({"user": serialize_user(user)}), 201
@@ -119,19 +102,11 @@ def update_user(id):
         return jsonify({"message": "No user found with that ID"}), 404
 
     data = request.get_json()
-
-    # user.gender = data.get('gender', user.gender)
     user.name = data.get("name", user.name)
-    # user.account_prefix = data.get('account_prefix', user.account_prefix)
-    # user.account_number = data.get('account_number', user.account_number)
     user.surnames = data.get("surnames", user.surnames)
-    # user.paypal = data.get('paypal', user.paypal)
     user.email = data.get("email", user.email)
     user.is_admin = data.get("is_admin", user.is_admin)
-    # user.username = data.get('username', user.username)
     user.password = data.get("password", user.password)
-    # user.location_street_number = data.get('location_street_number', user.location_street_number)
-    # user.location_street_name = data.get('location_street_name', user.location_street_name)
     user.location_city = data.get("location_city", user.location_city)
     user.location_state = data.get("location_state", user.location_state)
     user.location_country = data.get("location_country", user.location_country)
@@ -141,8 +116,6 @@ def update_user(id):
     user.registered_date = data.get("registered_date", user.registered_date)
     user.phone = data.get("phone", user.phone)
     user.picture_large = data.get("picture_large", user.picture_large)
-    user.picture_medium = data.get("picture_medium", user.picture_medium)
-    user.picture_thumbnail = data.get("picture_thumbnail", user.picture_thumbnail)
 
     db.session.commit()
     return jsonify({"user": serialize_user(user)})

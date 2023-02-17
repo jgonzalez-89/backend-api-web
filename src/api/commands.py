@@ -1,8 +1,5 @@
 import click
-import string
 import random
-import names
-import uuid
 import requests
 import json
 from sqlalchemy import func

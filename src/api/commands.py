@@ -115,8 +115,6 @@ def setup_commands(app):
         def random_price():
             return random.randint(1, 9000)
 
-        status_options = ["active", "inactive", "completed"]
-
         print("Creating test products...")
         for x in range(1, int(count) + 1):
             # Obtener un objeto de usuario aleatorio desde la base de datos
@@ -125,13 +123,14 @@ def setup_commands(app):
             product_name = random.choice(data["categories"][category][0])
             http_url = data["categories"][category][1]
             word = random.choice(data["select_words"])
+            product_description = data["description"]
 
             if category == http_url:
                 return http_url
 
             product = Product()
             product.name = f"{product_name} {word}"
-            product.description = f"A brief description of {product_name}"
+            product.description = product_description
             product.category = category
             product.price = random_price()
             product.images = ":".join(http_url)
